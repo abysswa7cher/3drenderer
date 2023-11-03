@@ -6,6 +6,7 @@ from math import sin, cos
 class OBJ:
     def __init__(self, path):
         self.faces = list()
+        self.scale = 100
 
         if isfile(path):
             with open(path) as file:
@@ -29,7 +30,7 @@ class OBJ:
 
     def render(self):
         for face in self.faces:
-            face.render()
+            face.render(self.scale)
 
 class Vertex:
     def __init__(self, coords:list):
@@ -77,6 +78,7 @@ class Face:
         self.sides = [(self.vertices[i], self.vertices[i+1]) if i < (len(self.vertices)-1) else (self.vertices[i], self.vertices[0]) for i in range(len(self.vertices))]
         self.center_x = self.display.get_size()[0] // 2
         self.center_y = self.display.get_size()[1] // 2
+    
     def update(self, angle):
         for v in self.vertices:
             v.update(angle)
@@ -90,9 +92,9 @@ class Face:
 
         return ((x1, y1), (x2, y2))
 
-    def render(self):
+    def render(self, scale):
         for side in self.sides:
-            pygame.draw.line(self.display, "gold", *self.side_verts_to_coords(side, 100), 1)
+            pygame.draw.line(self.display, "gold", *self.side_verts_to_coords(side, scale), 1)
 
     def __str__(self) -> str:
         v = tuple([v for v in self.vertices])
