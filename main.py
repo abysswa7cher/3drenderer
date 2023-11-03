@@ -1,40 +1,41 @@
-from time import time
-from classes.obj3 import OBJ
-import cProfile, dis
-from pyinstrument import Profiler
-from math import sin, cos
-import pygame
-from pygame.locals import *
-import sys
-from debug import debug
+import sys, pygame
 
+from classes.obj import OBJ
+from utils.debug import debug
 
 pygame.init()
 
 screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
+
 obj = OBJ("sword.obj")
-
-start = time()
-dtime = start - time()
-
 
 class Program:
     def __init__(self):
+        self.display = pygame.display.get_surface()
         self.action = False
-        self.last_mouse_pos = pygame.mouse.get_pos()
+        self.wireframe = False
         self.translation = False
         self.rotation = False
+        self.x = False
+        self.y = False
+        self.z = False
+        self.angle = 0.0
+        self.scale = 100
 
     def run(self):
         while True:
+            #region EVENTS
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-
+                    
+                #region KEYS
                 if event.type == pygame.KEYDOWN:
                     keys = pygame.key.get_pressed()
+
+                    # select mode: translation/rotation
                     if keys[pygame.K_q]:
                         if self.rotation: 
                             self.rotation = False
@@ -50,6 +51,32 @@ class Program:
                         else:
                             self.rotation = True
 
+                    # change rotation axis
+                    if keys[pygame.K_x]:
+                        if self.x: self.x = False
+                        else:      self.x = True
+                    if keys[pygame.K_y]:
+                        if self.y: self.y = False
+                        else:      self.y = True
+                    if keys[pygame.K_z]:
+                        if self.z: self.z = False
+                        else:      self.z = True
+                    
+                    # change rotation angle (still spinning crazy af)
+                    if keys[pygame.K_UP]:
+                        self.angle += 0.000000000000001
+                    if keys[pygame.K_DOWN]:
+                        self.angle -= 0.000000000000001
+                    
+                    # toggle wireframe mode
+                    if keys[pygame.K_1]:
+                        if self.wireframe:
+                            self.wireframe = False
+                        else:
+                            self.wireframe = True
+
+                # toggle current action
+                # hold LMB to perform currently selected operations
                 if event.type == pygame.MOUSEBUTTONDOWN:
                         keys = pygame.mouse.get_pressed()
                         if keys[0] and not self.action:
@@ -59,42 +86,38 @@ class Program:
                     keys = pygame.mouse.get_pressed()
                     if not keys[0] and self.action:
                         self.action = False
-
+                
+                # change model scale
                 if event.type == pygame.MOUSEWHEEL:
                     if event.y < 0:
-                        obj.scale += 0.5
+                        self.scale += 3
                     if event.y > 0:
-                        obj.scale -= 0.5
+                        self.scale -= 3
+                #endregion KEYS
+            #endregion EVENTS
             
+            #region UPDATE
+
+            obj.update(self.angle, self.action,
+                       [self.translation, self.rotation], 
+                       [self.x, self.y, self.z])
             
+            #endregion UPDATE
+
+            #region RENDER
+
             screen.fill("black")
+            obj.render(self.display, self.wireframe, self.scale)
 
-            obj.update(0.001, pygame.mouse.get_pos(), self.action, [self.translation, self.rotation])
-            obj.render()
-            # obj.faces[0].update((time()-start)*0.01)
-            # obj.faces[0].render()
-            debug(f"action: {self.action}, translation: {self.translation}, rotation: {self.rotation} FPS:{clock.get_fps()}")
-
+            # render debug info
+            debug(f"action: {'On' if self.action else 'Off'}, translation: {'On' if self.translation else 'Off'}, rotation: {'On' if self.rotation else 'Off'}, X: {'On' if self.x else 'Off'}, Y: {'On' if self.y else 'Off'}, Z: {'On' if self.z else 'Off'}, Scale: {self.scale}, Angle: {self.angle} FPS:{clock.get_fps()}")
+            
             pygame.display.update()
+
+            #endregion RENDER
+            
             clock.tick()
-
-            # if time() - start > 10:
-            #     end = time()
-            #     print(f"runtime: {end-start}")
-            #     break
-
-        # pygame.quit()
-        # sys.exit()
 
 
 if __name__ == "__main__":
-    # with Profiler(interval=0.1) as pr:
     Program().run()
-    # pr.open_in_browser()
-    # cProfile.run('Program().run()', sort="tottime")
-
-    # Program().run()
-    # print(*obj.faces[0].get_rotation_matrix(obj.faces[0].sides[0][0], 1))
-    # print(obj.faces[0].update(1))
-    # print(obj.faces[0].sides)
-    pass
