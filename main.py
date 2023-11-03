@@ -8,19 +8,20 @@ pygame.init()
 screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 
-obj = OBJ("sword.obj")
+obj = OBJ("torus.obj")
 
 class Program:
     def __init__(self):
         self.display = pygame.display.get_surface()
-        self.action = False
+        self.LMB = False
+        self.RMB = False
         self.wireframe = False
         self.translation = False
         self.rotation = False
         self.x = False
         self.y = False
         self.z = False
-        self.angle = 0.0
+        self.angle = 1.0
         self.scale = 100
 
     def run(self):
@@ -64,9 +65,9 @@ class Program:
                     
                     # change rotation angle (still spinning crazy af)
                     if keys[pygame.K_UP]:
-                        self.angle += 0.000000000000001
+                        self.angle += 0.1
                     if keys[pygame.K_DOWN]:
-                        self.angle -= 0.000000000000001
+                        self.angle -= 0.1
                     
                     # toggle wireframe mode
                     if keys[pygame.K_1]:
@@ -79,13 +80,17 @@ class Program:
                 # hold LMB to perform currently selected operations
                 if event.type == pygame.MOUSEBUTTONDOWN:
                         keys = pygame.mouse.get_pressed()
-                        if keys[0] and not self.action:
-                            self.action = True
+                        if keys[0] and not self.LMB:
+                            self.LMB = True
+                        if keys[2] and not self.RMB:
+                            self.RMB = True
 
                 if event.type == pygame.MOUSEBUTTONUP:
                     keys = pygame.mouse.get_pressed()
-                    if not keys[0] and self.action:
-                        self.action = False
+                    if not keys[0] and self.LMB:
+                        self.LMB = False
+                    if not keys[0] and self.RMB:
+                        self.RMB = False
                 
                 # change model scale
                 if event.type == pygame.MOUSEWHEEL:
@@ -95,10 +100,10 @@ class Program:
                         self.scale -= 3
                 #endregion KEYS
             #endregion EVENTS
-            
+
             #region UPDATE
 
-            obj.update(self.angle, self.action,
+            obj.update([self.LMB, self.RMB], self.angle, 
                        [self.translation, self.rotation], 
                        [self.x, self.y, self.z])
             
@@ -110,13 +115,13 @@ class Program:
             obj.render(self.display, self.wireframe, self.scale)
 
             # render debug info
-            debug(f"action: {'On' if self.action else 'Off'}, translation: {'On' if self.translation else 'Off'}, rotation: {'On' if self.rotation else 'Off'}, X: {'On' if self.x else 'Off'}, Y: {'On' if self.y else 'Off'}, Z: {'On' if self.z else 'Off'}, Scale: {self.scale}, Angle: {self.angle} FPS:{clock.get_fps()}")
+            debug(f"LMB: {'On' if self.LMB else 'Off'}, RMB: {'On' if self.RMB else 'Off'}, translation: {'On' if self.translation else 'Off'}, rotation: {'On' if self.rotation else 'Off'}, X: {'On' if self.x else 'Off'}, Y: {'On' if self.y else 'Off'}, Z: {'On' if self.z else 'Off'}, Scale: {self.scale}, Angle: {self.angle} FPS:{clock.get_fps()}")
             
             pygame.display.update()
 
             #endregion RENDER
             
-            clock.tick()
+            clock.tick(60)
 
 
 if __name__ == "__main__":
