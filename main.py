@@ -15,7 +15,8 @@ class Program:
         self.display = pygame.display.get_surface()
         self.LMB = False
         self.RMB = False
-        self.wireframe = False
+        self.wireframe = True
+        self.normals = False
         self.translation = False
         self.rotation = False
         self.x = False
@@ -37,6 +38,11 @@ class Program:
                     keys = pygame.key.get_pressed()
 
                     # select mode: translation/rotation
+                    if keys[pygame.K_n]:
+                        if self.normals: 
+                            self.normals = False
+                        else:
+                            self.normals = True
                     if keys[pygame.K_q]:
                         if self.rotation: 
                             self.rotation = False
@@ -112,11 +118,13 @@ class Program:
             #region RENDER
 
             screen.fill("black")
-            obj.render(self.display, self.wireframe, self.scale)
+            obj.render(self.display, self.wireframe, self.normals, self.scale)
 
             # render debug info
-            debug(f"LMB: {'On' if self.LMB else 'Off'}, RMB: {'On' if self.RMB else 'Off'}, translation: {'On' if self.translation else 'Off'}, rotation: {'On' if self.rotation else 'Off'}, X: {'On' if self.x else 'Off'}, Y: {'On' if self.y else 'Off'}, Z: {'On' if self.z else 'Off'}, Scale: {self.scale}, Angle: {self.angle} FPS:{clock.get_fps()}")
-            
+            debug(f"Move: {'On' if self.translation else 'Off'}, Rotate: {'On' if self.rotation else 'Off'}")
+            debug(f"Wireframe: {'On' if self.wireframe else 'Off'}, Normals: {'On' if self.normals else 'Off'}", 30, 10)
+            debug(f"X: {'On' if self.x else 'Off'}, Y: {'On' if self.y else 'Off'}, Z: {'On' if self.z else 'Off'}, Scale: {self.scale}, Angle: {self.angle}", 50, 10)
+            debug(f"FPS:{clock.get_fps()}", 70, 10)
             pygame.display.update()
 
             #endregion RENDER
