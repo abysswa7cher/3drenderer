@@ -1,6 +1,8 @@
 import pygame
-from math import sin, cos, sqrt, radians
-from numpy import dot
+from math import sin, cos, radians, sqrt
+from numpy import cross
+from utils.math import norm, extend
+from operator import sub
 
 class OBJ:
     def __init__(self, path):
@@ -141,46 +143,37 @@ class OBJ:
             screen_center = (display.get_width() // 2, display.get_height() // 2)
             
             if wireframe:
-                self.draw_normals(display, screen_center, scale)
                 self.draw_edges(display, screen_center, scale)
-            else:
                 self.draw_normals(display, screen_center, scale)
+            else:
                 self.draw_faces(display, screen_center, scale)
+                self.draw_normals(display, screen_center, scale)
 
     def draw_normals(self, display, screen_center, scale):
         faces = self.faces
-        faces.reverse()
 
         for face in faces:
             face_center = self.get_face_center(face)
             face_center = (screen_center[0] - face_center[0] * scale, 
                            screen_center[1] - face_center[1] * scale)
             
-            face_normal = self.get_face_normal(face)
-            face_normal = (screen_center[0] - face_normal[0] * scale, 
-                           screen_center[1] - face_normal[1] * scale, face_normal[2])
-            
-            face_normal = self.vnorm(face_normal)[0:2]
+            face_normal = extend(norm(self.get_face_normal(face)), 1.25)
             face_normal = (screen_center[0] - face_normal[0] * scale, 
                            screen_center[1] - face_normal[1] * scale)
             
-            # pygame.draw.line(display, "green", (face_center[0], face_center[1]), face_normal)
-            pygame.draw.circle(display, "green", (face_normal), 2)
-            pygame.draw.circle(display, "red", (face_center), 3)
-
+            pygame.draw.line(display, "blue", face_center, face_normal)
+            pygame.draw.circle(display, "red", (face_normal), 2)
+            pygame.draw.circle(display, "green", (face_center), 3)
 
     def get_face_normal(self, face):
-        p1, p2, p3 = self.vertices[face[0]], self.vertices[face[1]], self.vertices[face[-1]]
+        p1 = self.vertices[face[0]]
+        p2 = self.vertices[face[1]]
+        p3 = self.vertices[face[-2]]
 
-        v1 = p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]
-        v2 = p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2]
+        v1 = list(map(sub, p2, p1))
+        v2 = list(map(sub, p3, p1))
 
-
-        x =  (v1[1] * v2[2]) - (v1[2] - v2[2])
-        y = -((v2[2] * v1[0]) - (v2[0] * v1[2]))
-        z =  (v1[0] * v2[1]) - (v1[2] * v2[0])
-
-        return [x, y, z]
+        return cross(v1, v2)
     
     def get_face_center(self, face):
         points = [self.vertices[i] for i in face]
@@ -192,16 +185,7 @@ class OBJ:
 
         return center_c
 
-    def vnorm(self, vector):
-        mag = sqrt(vector[0]**2 + vector[1]**2 + vector[2]**2)
-        if mag == 0:
-            return vector
-        else:
-            unit_vector = [vector[0] / mag,
-                        vector[1] / mag,
-                        vector[2] / mag]
-        
-            return unit_vector
+    
     
 # obj = OBJ("cube.obj")
 # obj.get_face_center()
