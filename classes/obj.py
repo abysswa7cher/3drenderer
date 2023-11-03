@@ -93,14 +93,6 @@ class OBJ:
                 if axis[2]:
                     self.__self_rotate_z__(angle)
 
-    def render(self, display:pygame.display, wireframe:bool, scale:float):
-        center = (display.get_width() // 2, display.get_height() // 2)
-        
-        if wireframe:
-            self.draw_edges(display, center, scale)
-        else:
-            self.draw_faces(display, center, scale)
-
     def draw_edges(self, display:pygame.display, center:tuple, scale:float):
         for i in self.sides:
             # print(i)
@@ -117,3 +109,11 @@ class OBJ:
                              center[1] - self.vertices[i][1] * scale) for i in face]
             
             pygame.draw.polygon(display, "white", final_coords)
+
+    def render(self, display:pygame.display, wireframe:bool, scale:float):
+            center = (display.get_width() // 2, display.get_height() // 2)
+            
+            if wireframe:
+                self.draw_edges(display, center, scale)
+            else:
+                self.draw_faces(display, center, scale)
