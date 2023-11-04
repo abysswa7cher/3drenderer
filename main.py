@@ -8,14 +8,15 @@ pygame.init()
 screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 
-obj = OBJ("xyzcube.obj")
+obj = OBJ("xyzsword.obj")
 
 class Program:
     def __init__(self):
         self.display = pygame.display.get_surface()
         self.LMB = False
         self.RMB = False
-        self.wireframe = True
+        self.wireframe = False
+        self.edge_mode = False
         self.normals = False
         self.translation = False
         self.rotation = False
@@ -43,6 +44,11 @@ class Program:
                             self.normals = False
                         else:
                             self.normals = True
+                    if keys[pygame.K_2]:
+                        if self.edge_mode: 
+                            self.edge_mode = False
+                        else:
+                            self.edge_mode = True
                     if keys[pygame.K_q]:
                         if self.rotation: 
                             self.rotation = False
@@ -118,19 +124,17 @@ class Program:
             #region RENDER
 
             screen.fill("black")
-            obj.render(self.display, self.wireframe, self.normals, self.scale)
+            obj.render(self.display, self.wireframe, self.edge_mode, self.normals, self.scale)
 
             # render debug info
             debug(f"Move: {'On' if self.translation else 'Off'}, Rotate: {'On' if self.rotation else 'Off'}")
             debug(f"Wireframe: {'On' if self.wireframe else 'Off'}, Normals: {'On' if self.normals else 'Off'}", 30, 10)
             debug(f"X: {'On' if self.x else 'Off'}, Y: {'On' if self.y else 'Off'}, Z: {'On' if self.z else 'Off'}, Scale: {self.scale}, Angle: {self.angle}", 50, 10)
             debug(f"FPS:{clock.get_fps()}", 70, 10)
-            pygame.display.update()
 
             #endregion RENDER
-            
+            pygame.display.update()
             clock.tick(60)
-
 
 if __name__ == "__main__":
     Program().run()

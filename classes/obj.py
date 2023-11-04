@@ -1,29 +1,28 @@
 import pygame
 from math import sin, cos, radians
-from numpy import cross
-from utils.math import norm, extend
+from numpy import cross, dot
+from utils.math import vnorm, vextend, vadd
 from operator import sub
 
 class OBJ:
     def __init__(self, path):
+        self.name = path.split("/")[-1].split(".")[-2]
         self.vertices = dict()
         self.normals = dict()
         self.faces = list()
-        self.sides = list()
 
         with open(path) as file:
-            self.read_obj(path, file)
+            self.read_obj(file)
 
         self.generate_sides()
 
-    def read_obj(self, path, file):
+    def read_obj(self, file):
         data = file.readlines()
 
         i = 1
         j = 1
         for line in data:
             line = line.strip().split()
-            self.name = path.split("/")[-1].split(".")[-2]
             if "v" in line[0]:
                 self.vertices.update({i: [float(v) for v in line[1:]]})
                 i += 1
@@ -31,24 +30,28 @@ class OBJ:
                 self.normals.update({j:[float(v) for v in line[1:]]})
                 j += 1
             if "f" in line[0]:
-                normal_index = int(line[1:][0].split("//")[1])
-                verts = [int(v.split("//")[0]) for v in line[1:]]
-
+                if "//" in line:
+                    normal_index = int(line[1:][0].split("//")[1])
+                    verts = [int(v.split("//")[0]) for v in line[1:]]
+                else:
+                    normal_index = int(line[1:][0].split("/")[2])
+                    verts = [int(v.split("/")[0]) for v in line[1:]]
                 self.faces.append([verts, normal_index])
+                
 
     def generate_sides(self):
         pairs_q = [(0, 1), (1, 2), (2, 3), (3, 0)]
         pairs_t = [(0, 1), (1, 2), (2, 0)]
 
-        for face in self.faces:
+        for i, face in enumerate(self.faces):
             face = face[0]
             if len(face) == 4:
-                for p in pairs_q:
-                    self.sides.append((face[p[0]], face[p[1]]))
-            if len(face) == 3:
-                for p in pairs_t:
-                    self.sides.append((face[p[0]], face[p[1]]))
-
+                self.faces[i].append([(face[p[0]], face[p[1]]) for p in pairs_q])
+            elif len(face) == 3:
+                self.faces[i].append([(face[p[0]], face[p[1]]) for p in pairs_t])
+            else:
+                raise ValueError(f"Face {face} is not a triangle nor a quad (Vertex count < 3 or > 4).")
+        
     def translate(self):
         pass
 
@@ -136,59 +139,67 @@ class OBJ:
                 if axis[2] and action[1]:
                     self.__self_rotate_z__(-angle)
 
-    def draw_edges(self, display:pygame.display, center:tuple, scale:float):
-        for i in self.sides:
-            # print(i)
-            v1 = (center[0] - self.vertices[i[0]][0] * scale,
-                  center[1] - self.vertices[i[0]][1] * scale)
-            v2 = (center[0] - self.vertices[i[1]][0] * scale,
-                  center[1] - self.vertices[i[1]][1] * scale)
+    def draw_edges(self, display:pygame.display, face:list, screen_center:tuple, scale:float):
+            edges = face[2]
+            for edge in edges:
+                v1 = (screen_center[0] - self.vertices[edge[0]][0] * scale,
+                      screen_center[1] - self.vertices[edge[0]][1] * scale)
+                v2 = (screen_center[0] - self.vertices[edge[1]][0] * scale,
+                      screen_center[1] - self.vertices[edge[1]][1] * scale)
+                
+                pygame.draw.line(display, "gold", v1, v2, 1)
 
-            print(v1, v2)
-            pygame.draw.line(display, "gold", v1, v2, 1)
-
-    def draw_faces(self, display:pygame.display, center:tuple, scale:float):
+    def draw_wireframe(self, display:pygame.display, screen_center:tuple, scale:float, normals:bool):
         for face in self.faces:
-            final_coords = [(center[0] - self.vertices[i][0] * scale, 
-                             center[1] - self.vertices[i][1] * scale) for i in face[0]]
+            self.draw_edges(display, face, screen_center, scale)
+            
+            if normals:
+                self.draw_normal(display, face, screen_center, scale)
+
+    def draw_face(self, display:pygame.display, face:list, screen_center:tuple, scale:float, normals:bool, edge_mode:bool):
+        face_center = self.get_face_center(face)
+        face_normal = vadd(face_center, vextend(self.get_face_normal(face), 0.25))
+        face_normal = (screen_center[0] - face_normal[0] * scale, 
+                       screen_center[1] - face_normal[1] * scale,
+                       screen_center[1] - face_normal[2] * scale)
+        
+        if dot([-1, 0, 0], face_normal) < 0:
+            final_coords = [(screen_center[0] - self.vertices[i][0] * scale,
+                             screen_center[1] - self.vertices[i][1] * scale) for i in face[0]]
             
             pygame.draw.polygon(display, "white", final_coords)
 
-    def render(self, display:pygame.display, wireframe:bool, normals:bool, scale:float):
+            if edge_mode: 
+                self.draw_edges(display, face, screen_center, scale)
+            if normals:   
+                self.draw_normal(display, face, screen_center, scale)
+
+    def draw_mesh(self, display:pygame.display, screen_center:tuple, scale:float, normals:bool, edge_mode:bool):
+        for face in self.faces:
+            self.draw_face(display, face, screen_center, scale, normals, edge_mode)
+
+    def render(self, display:pygame.display, wireframe:bool, edge_mode:bool, normals:bool, scale:float):
             screen_center = (display.get_width() // 2, display.get_height() // 2)
             
             if wireframe:
-                self.draw_edges(display, screen_center, scale)
-                if normals:
-                    self.draw_normals(display, screen_center, scale)
+                self.draw_wireframe(display, screen_center, scale, normals)
             else:
-                self.draw_faces(display, screen_center, scale)
-                if normals:
-                    self.draw_normals(display, screen_center, scale)
+                self.draw_mesh(display, screen_center, scale, normals, edge_mode)
 
-    def draw_normals(self, display, screen_center, scale):
-        for face in self.faces:
+    def draw_normal(self, display, face, screen_center, scale):
             face_center = self.get_face_center(face)
-            face_center = (screen_center[0] - face_center[0] * scale, 
+            face_normal = vextend(self.get_face_normal(face), 0.25)
+            face_normal = vadd(face_center, face_normal)
+
+            face_center = (screen_center[0] - face_center[0] * scale,
                            screen_center[1] - face_center[1] * scale)
             
-            face_normal = extend(self.get_face_normal(face), 1.25)
             face_normal = (screen_center[0] - face_normal[0] * scale, 
                            screen_center[1] - face_normal[1] * scale)
             
             pygame.draw.line(display, "blue", face_center, face_normal)
-            pygame.draw.circle(display, "red", (face_normal), 2)
             pygame.draw.circle(display, "green", (face_center), 3)
 
-    # def get_face_normal(self, face):
-    #     p1 = self.vertices[face[0]]
-    #     p2 = self.vertices[face[1]]
-    #     p3 = self.vertices[face[-2]]
-
-    #     v1 = list(map(sub, p2, p1))
-    #     v2 = list(map(sub, p3, p1))
-
-    #     return cross(v1, v2)
     def get_face_normal(self, face):
         return self.normals[face[1]]
 
