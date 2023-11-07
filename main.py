@@ -1,6 +1,6 @@
 import sys, pygame
 
-from classes.obj import OBJ
+from classes.obj2 import OBJ
 from utils.debug import debug
 
 pygame.init()
@@ -16,7 +16,7 @@ class Program:
         self.LMB = False
         self.RMB = False
         self.wireframe = False
-        self.edge_mode = False
+        self.edge_mode = True
         self.normals = False
         self.translation = False
         self.rotation = False
