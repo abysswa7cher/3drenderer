@@ -1,6 +1,6 @@
 import sys, pygame
 
-from classes.obj2 import OBJ
+from classes.obj import OBJ
 from utils.debug import debug
 
 pygame.init()
